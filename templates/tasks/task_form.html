@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block title %}{{ action }} Task{% endblock %}
+{% block topbar_title %}{{ action }} Task{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1 class="page-title">{{ action }} Task</h1>
+    <p class="page-subtitle">{% if action == 'Create' %}Add a new task to your list{% else %}Update task details{% endif %}</p>
+  </div>
+  <a href="{% url 'task_list' %}" class="btn btn-ghost">
+    <i class="fa-solid fa-arrow-left"></i> Back
+  </a>
+</div>
+
+<div style="max-width:620px;">
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">{% if action == 'Create' %}🌱 New Task{% else %}✏️ Edit Task{% endif %}</span>
+    </div>
+    <div class="card-body">
+      <form method="post">
+        {% csrf_token %}
+        <div class="form-group">
+          <label class="form-label">Task Title <span style="color:var(--danger);">*</span></label>
+          {{ form.title }}
+          {% if form.title.errors %}<div class="form-error">{{ form.title.errors.0 }}</div>{% endif %}
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          {{ form.description }}
+          {% if form.description.errors %}<div class="form-error">{{ form.description.errors.0 }}</div>{% endif %}
+        </div>
+        <div class="form-group">
+          <label class="form-label">Due Date <span style="color:var(--danger);">*</span></label>
+          {{ form.due_date }}
+          {% if form.due_date.errors %}<div class="form-error">{{ form.due_date.errors.0 }}</div>{% endif %}
+        </div>
+        <div class="grid-2" style="gap:16px;">
+          <div class="form-group">
+            <label class="form-label">Priority</label>
+            {{ form.priority }}
+          </div>
+          <div class="form-group">
+            <label class="form-label">Category / Label</label>
+            {{ form.category }}
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Status</label>
+          {{ form.status }}
+        </div>
+        <div style="display:flex;gap:12px;margin-top:8px;">
+          <button type="submit" class="btn btn-primary">
+            <i class="fa-solid fa-{% if action == 'Create' %}plus{% else %}check{% endif %}"></i>
+            {{ action }} Task
+          </button>
+          <a href="{% url 'task_list' %}" class="btn btn-ghost">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

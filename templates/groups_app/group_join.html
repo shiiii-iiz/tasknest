@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+{% block title %}Join a Group{% endblock %}
+{% block topbar_title %}Join Group{% endblock %}
+
+{% block content %}
+<div style="max-width:520px;margin:40px auto;">
+
+  <!-- ── Main Card ─────────────────────────────────────────── -->
+  <div class="card" style="overflow:hidden;">
+
+    <!-- Decorative pink top bar -->
+    <div style="height:6px;background:linear-gradient(90deg,var(--blossom),var(--bloom),var(--pink-400));"></div>
+
+    <div style="padding:48px 44px;">
+
+      <!-- Icon + title -->
+      <div style="text-align:center;margin-bottom:32px;">
+        <div style="width:72px;height:72px;background:linear-gradient(135deg,var(--blush),var(--petal));border:2px solid var(--blossom);border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 18px;">
+          🔑
+        </div>
+        <h1 class="page-title" style="font-size:26px;margin-bottom:6px;">Join a Group</h1>
+        <p style="color:var(--text-muted);font-size:14px;line-height:1.6;max-width:340px;margin:0 auto;">
+          Enter the invite code shared by your group admin to join their workspace.
+        </p>
+      </div>
+
+      <!-- Form -->
+      <form method="post">
+        {% csrf_token %}
+
+        <div class="form-group" style="margin-bottom:20px;">
+          <label class="form-label" style="text-align:center;display:block;margin-bottom:10px;">
+            Invite Code
+          </label>
+          <!-- Big styled code input -->
+          <input
+            type="text"
+            name="invite_code"
+            id="id_invite_code"
+            maxlength="12"
+            autocomplete="off"
+            autocorrect="off"
+            spellcheck="false"
+            placeholder="e.g.  AB12CD34EF"
+            value="{{ form.invite_code.value|default:'' }}"
+            style="
+              width:100%;
+              text-align:center;
+              font-family:'Courier New',monospace;
+              font-size:26px;
+              font-weight:700;
+              letter-spacing:6px;
+              text-transform:uppercase;
+              padding:16px 20px;
+              border:2.5px solid var(--petal);
+              border-radius:var(--radius-lg);
+              background:var(--blush);
+              color:var(--pink-600);
+              outline:none;
+              transition:border-color .2s,box-shadow .2s;
+              box-sizing:border-box;
+            "
+            oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'')"
+            onfocus="this.style.borderColor='var(--bloom)';this.style.boxShadow='0 0 0 3px rgba(244,114,182,.15)'"
+            onblur="this.style.borderColor='var(--petal)';this.style.boxShadow='none'"
+          >
+          {% if form.invite_code.errors %}
+          <div class="form-error" style="text-align:center;margin-top:8px;">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            {{ form.invite_code.errors|join:", " }}
+          </div>
+          {% endif %}
+          <div style="text-align:center;font-size:12px;color:var(--text-muted);margin-top:8px;">
+            Codes are 10 characters — letters and numbers only
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-full" style="height:48px;font-size:15px;">
+          <i class="fa-solid fa-right-to-bracket"></i> Join Group
+        </button>
+      </form>
+
+      <!-- Divider -->
+      <div style="display:flex;align-items:center;gap:14px;margin:28px 0;">
+        <div style="flex:1;height:1px;background:var(--border);"></div>
+        <span style="font-size:12px;color:var(--text-muted);white-space:nowrap;">or start your own</span>
+        <div style="flex:1;height:1px;background:var(--border);"></div>
+      </div>
+
+      <!-- Create group CTA -->
+      <a href="{% url 'group_create' %}" class="btn btn-outline w-full" style="margin-bottom:16px;">
+        <i class="fa-solid fa-wand-magic-sparkles"></i> Create a New Group
+      </a>
+      <div style="text-align:center;">
+        <a href="{% url 'group_list' %}" style="font-size:13px;color:var(--text-muted);text-decoration:none;">
+          <i class="fa-solid fa-arrow-left" style="font-size:11px;"></i> Back to My Groups
+        </a>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- How it works -->
+  <div class="card" style="margin-top:20px;">
+    <div class="card-body" style="padding:20px 24px;">
+      <div style="font-size:13px;font-weight:600;color:var(--gray-600);margin-bottom:12px;">
+        <i class="fa-solid fa-circle-question" style="color:var(--pink-400);margin-right:6px;"></i>How it works
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <div style="width:24px;height:24px;background:var(--blush);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--pink-500);flex-shrink:0;">1</div>
+          <p style="font-size:13px;color:var(--text-muted);margin:0;line-height:1.5;">Ask your group admin to share the invite code with you.</p>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <div style="width:24px;height:24px;background:var(--blush);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--pink-500);flex-shrink:0;">2</div>
+          <p style="font-size:13px;color:var(--text-muted);margin:0;line-height:1.5;">Type or paste the 10-character code in the field above.</p>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <div style="width:24px;height:24px;background:var(--blush);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--pink-500);flex-shrink:0;">3</div>
+          <p style="font-size:13px;color:var(--text-muted);margin:0;line-height:1.5;">Click <strong>Join Group</strong> and you'll have instant access to the group's tasks and discussions.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

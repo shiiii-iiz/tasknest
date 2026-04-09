@@ -1,0 +1,204 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block topbar_title %}Dashboard{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="page-header">
+  <div class="page-header-left">
+    <h1 class="page-title">Good day, {{ request.user.first_name|default:request.user.username }}! 🌸</h1>
+    <p class="page-subtitle">{{ today|date:"l, F j, Y" }} — Here's your task overview</p>
+  </div>
+  <a href="{% url 'task_create' %}" class="btn btn-primary">
+    <i class="fa-solid fa-plus"></i> New Task
+  </a>
+</div>
+
+<!-- Stats -->
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="stat-icon si-pink"><i class="fa-solid fa-list-check" style="color:var(--pink-500);"></i></div>
+    <div class="stat-info">
+      <div class="stat-label">Total Tasks</div>
+      <div class="stat-value">{{ total }}</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon si-yellow"><i class="fa-solid fa-clock" style="color:#d97706;"></i></div>
+    <div class="stat-info">
+      <div class="stat-label">Pending</div>
+      <div class="stat-value">{{ pending }}</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon si-blue"><i class="fa-solid fa-spinner" style="color:#2563eb;"></i></div>
+    <div class="stat-info">
+      <div class="stat-label">Ongoing</div>
+      <div class="stat-value">{{ ongoing }}</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon si-green"><i class="fa-solid fa-circle-check" style="color:#059669;"></i></div>
+    <div class="stat-info">
+      <div class="stat-label">Completed</div>
+      <div class="stat-value">{{ completed }}</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon si-red"><i class="fa-solid fa-triangle-exclamation" style="color:#ef4444;"></i></div>
+    <div class="stat-info">
+      <div class="stat-label">Overdue</div>
+      <div class="stat-value">{{ overdue }}</div>
+      {% if overdue > 0 %}<div class="stat-sub" style="color:var(--danger);">Needs attention!</div>{% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Progress -->
+{% if total > 0 %}
+<div class="card mb-6" style="margin-bottom:24px;">
+  <div class="card-body" style="padding:18px 24px;">
+    <div class="flex items-center justify-between mb-3">
+      <span style="font-size:13px;font-weight:500;color:var(--gray-600);">Overall Progress</span>
+      <span style="font-size:13px;font-weight:700;color:var(--pink-500);">
+        {% widthratio completed total 100 %}%
+      </span>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill" style="width:{% widthratio completed total 100 %}%;"></div>
+    </div>
+    <div style="margin-top:6px;font-size:12px;color:var(--text-muted);">{{ completed }} of {{ total }} tasks completed</div>
+  </div>
+</div>
+{% endif %}
+
+<div class="grid-2" style="gap:24px;">
+  <!-- Recent Tasks -->
+  <div>
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">📋 My Tasks</span>
+        <a href="{% url 'task_list' %}" class="btn btn-ghost btn-sm">View All</a>
+      </div>
+      <div class="card-body" style="padding:16px;">
+        {% if recent_tasks %}
+          {% for task in recent_tasks %}
+          <div class="task-item {% if task.status == 'completed' %}completed-task{% endif %}">
+            <div class="task-check {% if task.status == 'completed' %}checked{% endif %}"
+                 onclick="toggleTask({{ task.pk }}, this)" style="cursor:pointer;">
+              <span class="task-check-icon">✓</span>
+            </div>
+            <div class="task-content">
+              <div class="task-title">{{ task.title }}</div>
+              <div class="task-meta">
+                <span class="badge badge-{{ task.priority }}">{{ task.get_priority_display }}</span>
+                <span class="badge badge-{{ task.category }}">{{ task.get_category_display }}</span>
+                <span class="task-date {% if task.is_overdue %}overdue{% elif task.is_due_soon %}due-soon{% endif %}">
+                  <i class="fa-regular fa-calendar"></i>
+                  {{ task.due_date|date:"M j" }}
+                  {% if task.is_overdue %} · Overdue!{% elif task.is_due_soon %} · Due soon!{% endif %}
+                </span>
+              </div>
+            </div>
+            <div class="task-actions">
+              <a href="{% url 'task_edit' task.pk %}" class="btn btn-ghost btn-icon btn-sm" title="Edit">
+                <i class="fa-solid fa-pen"></i>
+              </a>
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+        <div class="empty-state" style="padding:30px 20px;">
+          <div class="empty-state-icon">🌱</div>
+          <h3>No tasks yet</h3>
+          <p>Create your first task to get started!</p>
+          <a href="{% url 'task_create' %}" class="btn btn-primary btn-sm">Add Task</a>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Right column -->
+  <div style="display:flex;flex-direction:column;gap:20px;">
+    <!-- Upcoming deadlines -->
+    {% if upcoming %}
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">⏰ Upcoming (7 days)</span>
+      </div>
+      <div class="card-body" style="padding:14px 16px;">
+        {% for task in upcoming %}
+        <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);">
+          <div style="width:36px;height:36px;border-radius:8px;background:var(--blush);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;font-weight:700;color:var(--pink-600);">
+            {{ task.due_date|date:"j" }}<br><span style="font-size:9px;">{{ task.due_date|date:"M" }}</span>
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:13px;font-weight:600;color:var(--gray-700);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ task.title }}</div>
+            <div style="display:flex;gap:6px;margin-top:2px;">
+              <span class="badge badge-{{ task.priority }}" style="font-size:11px;">{{ task.get_priority_display }}</span>
+              {% if task.days_until_due == 0 %}<span style="font-size:11px;color:var(--danger);font-weight:500;">Due today!</span>
+              {% elif task.days_until_due == 1 %}<span style="font-size:11px;color:var(--warning);font-weight:500;">Due tomorrow!</span>
+              {% else %}<span style="font-size:11px;color:var(--text-muted);">{{ task.days_until_due }}d left</span>{% endif %}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Assigned group tasks -->
+    {% if assigned_group_tasks %}
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">👤 Assigned to Me</span>
+        <a href="{% url 'assigned_tasks' %}" class="btn btn-ghost btn-sm">View All</a>
+      </div>
+      <div class="card-body" style="padding:14px 16px;">
+        {% for task in assigned_group_tasks %}
+        <div style="padding:8px 0;border-bottom:1px solid var(--border);">
+          <div style="font-size:13px;font-weight:600;color:var(--gray-700);">{{ task.title }}</div>
+          <div style="display:flex;gap:6px;margin-top:4px;align-items:center;">
+            <span class="badge badge-pink" style="font-size:11px;">{{ task.group.name }}</span>
+            <span class="badge badge-{{ task.status }}" style="font-size:11px;">{{ task.get_status_display }}</span>
+            <span style="font-size:11px;color:var(--text-muted);">{{ task.due_date|date:"M j" }}</span>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Quick links -->
+    <div class="card">
+      <div class="card-header"><span class="card-title">⚡ Quick Actions</span></div>
+      <div class="card-body" style="padding:16px;display:flex;flex-direction:column;gap:8px;">
+        <a href="{% url 'task_create' %}" class="btn btn-outline w-full"><i class="fa-solid fa-plus"></i> New Personal Task</a>
+        <a href="{% url 'group_create' %}" class="btn btn-outline w-full"><i class="fa-solid fa-people-group"></i> Create Group</a>
+        <a href="{% url 'group_join' %}" class="btn btn-outline w-full"><i class="fa-solid fa-right-to-bracket"></i> Join a Group</a>
+        <a href="{% url 'calendar' %}" class="btn btn-outline w-full"><i class="fa-solid fa-calendar"></i> View Calendar</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleTask(pk, el) {
+  fetch(`/tasks/${pk}/toggle/`, {
+    method: 'POST',
+    headers: {'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/json'},
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      el.classList.toggle('checked', data.status === 'completed');
+      const item = el.closest('.task-item');
+      item.classList.toggle('completed-task', data.status === 'completed');
+      const titleEl = item.querySelector('.task-title');
+      titleEl.style.textDecoration = data.status === 'completed' ? 'line-through' : '';
+    }
+  });
+}
+</script>
+{% endblock %}

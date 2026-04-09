@@ -1,0 +1,325 @@
+{% extends 'base.html' %}
+{% block title %}{{ group.name }} — Discussion{% endblock %}
+{% block topbar_title %}{{ group.name }} — Discussion{% endblock %}
+
+{% block extra_css %}
+<style>
+.msg-bubble {
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: 0 16px 16px 16px;
+  padding: 14px 16px;
+  position: relative;
+  transition: border-color .2s;
+}
+.msg-bubble:hover { border-color: var(--petal); }
+.msg-bubble.mine {
+  background: var(--pink-50);
+  border-color: var(--petal);
+  border-radius: 16px 0 16px 16px;
+}
+.reply-bubble {
+  background: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-radius: 0 12px 12px 12px;
+  padding: 10px 14px;
+  margin-top: 8px;
+  margin-left: 20px;
+}
+.reply-bubble.mine {
+  background: var(--pink-50);
+  border-color: var(--petal);
+}
+.msg-actions {
+  display: none;
+  gap: 4px;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+.msg-bubble:hover .msg-actions { display: flex; }
+.pin-strip {
+  background: linear-gradient(135deg, #fffbeb, #fef9c3);
+  border: 1.5px solid #fde68a;
+  border-left: 4px solid #f59e0b;
+  border-radius: 0 12px 12px 0;
+  padding: 14px 16px;
+  position: relative;
+}
+.reply-form-area {
+  display: none;
+  margin-top: 10px;
+  margin-left: 20px;
+  padding: 12px;
+  background: var(--pink-50);
+  border: 1px solid var(--petal);
+  border-radius: 12px;
+  animation: fadeIn .2s ease;
+}
+@keyframes fadeIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:none; } }
+
+/* --- NEW CSS FOR SMALLER CHAT BOX --- */
+.chat-input-wrapper {
+  position: sticky;
+  bottom: 20px;
+  background: var(--white);
+  border: 1.5px solid var(--petal);
+  border-radius: 50px; /* Pill shape for a smaller feel */
+  padding: 8px 16px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+  z-index: 100;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.chat-form {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+}
+.chat-form textarea {
+  flex: 1;
+  height: 42px !important;
+  min-height: 42px !important;
+  margin: 0 !important;
+  padding: 10px 14px !important;
+  border-radius: 20px !important;
+  resize: none; /* Prevent expanding */
+  border: 1px solid var(--border);
+}
+.chat-form textarea:focus {
+  border-color: var(--pink-400);
+  outline: none;
+}
+.btn-send {
+  height: 42px;
+  border-radius: 20px;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* --- NEW CSS FOR DELETE BUTTONS --- */
+.btn-delete {
+  color: var(--danger) !important;
+  font-size: 11px !important;
+}
+.btn-delete-reply {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--danger);
+  font-size: 11px;
+  padding: 0;
+  margin-left: 8px;
+  transition: opacity 0.2s;
+}
+.btn-delete-reply:hover {
+  opacity: 0.6;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1 class="page-title">💬 Discussion</h1>
+    <p class="page-subtitle">{{ group.name }} — Group Chat</p>
+  </div>
+  <a href="{% url 'group_detail' group.pk %}" class="btn btn-ghost">
+    <i class="fa-solid fa-arrow-left"></i> Back to Group
+  </a>
+</div>
+
+<!-- Tab nav -->
+<div class="tab-nav" style="margin-bottom:24px;">
+  <a href="{% url 'group_detail' group.pk %}" class="tab-btn">Overview</a>
+  <a href="{% url 'group_task_list' group.pk %}" class="tab-btn">Tasks</a>
+  <a href="{% url 'group_members' group.pk %}" class="tab-btn">Members</a>
+  <a href="{% url 'discussion' group.pk %}" class="tab-btn active">Discussion</a>
+</div>
+
+<!-- ── Pinned Messages ─────────────────────────────────────── -->
+{% if pinned_messages %}
+<div style="margin-bottom:24px;">
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+    <span style="font-size:18px;">📌</span>
+    <span style="font-size:14px;font-weight:700;color:var(--gray-700);">Pinned Messages</span>
+    <span style="font-size:12px;color:var(--text-muted);">({{ pinned_messages.count }})</span>
+  </div>
+  {% for msg in pinned_messages %}
+  <div class="pin-strip" style="margin-bottom:10px;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+      <div style="width:32px;height:32px;background:linear-gradient(135deg,var(--bloom),var(--pink-600));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:white;flex-shrink:0;">
+        {{ msg.author.first_name|first|default:msg.author.username|first|upper }}
+      </div>
+      <div>
+        <span style="font-size:13px;font-weight:700;color:var(--gray-800);">{{ msg.author.get_full_name|default:msg.author.username }}</span>
+        <span style="font-size:11px;color:var(--text-muted);margin-left:6px;">{{ msg.created_at|timesince }} ago</span>
+      </div>
+      <span style="margin-left:auto;font-size:11px;color:#b45309;font-weight:600;display:flex;align-items:center;gap:3px;">
+        <i class="fa-solid fa-thumbtack"></i> Pinned by {{ msg.pinned_by.get_full_name|default:msg.pinned_by.username }}
+      </span>
+      {% if is_admin %}
+      <form method="post" style="margin:0;">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="pin">
+        <input type="hidden" name="message_id" value="{{ msg.pk }}">
+        <button type="submit" class="btn btn-ghost btn-sm btn-icon" title="Unpin">
+          <i class="fa-solid fa-thumbtack-slash" style="color:#d97706;"></i>
+        </button>
+      </form>
+      {% endif %}
+    </div>
+    <div style="font-size:14px;color:var(--gray-700);line-height:1.6;padding-left:42px;">{{ msg.content }}</div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- ── Message Feed ────────────────────────────────────────── -->
+<div style="margin-bottom: 24px;">
+  {% if main_messages %}
+    {% for msg in main_messages %}
+    <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:18px;{% if msg.author == request.user %}flex-direction:row-reverse;{% endif %}">
+      <!-- Avatar -->
+      <div style="width:38px;height:38px;background:{% if msg.author == request.user %}linear-gradient(135deg,var(--blossom),var(--bloom)){% else %}var(--petal){% endif %};border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:{% if msg.author == request.user %}white{% else %}var(--pink-600){% endif %};flex-shrink:0;">
+        {{ msg.author.first_name|first|default:msg.author.username|first|upper }}
+      </div>
+      <div style="max-width:70%;{% if msg.author == request.user %}align-items:flex-end;{% endif %}display:flex;flex-direction:column;gap:2px;">
+        <!-- Name + time -->
+        <div style="font-size:12px;color:var(--text-muted);{% if msg.author == request.user %}text-align:right;{% endif %}">
+          <strong style="color:var(--gray-700);">{{ msg.author.get_full_name|default:msg.author.username }}</strong>
+          &middot; {{ msg.created_at|timesince }} ago
+        </div>
+        <!-- Bubble -->
+        <div class="msg-bubble {% if msg.author == request.user %}mine{% endif %}">
+          <div style="font-size:14px;color:var(--gray-800);line-height:1.65;white-space:pre-wrap;">{{ msg.content }}</div>
+          <!-- Actions -->
+          <div class="msg-actions">
+            <button class="btn btn-ghost btn-sm btn-icon" onclick="toggleReply({{ msg.pk }})" title="Reply">
+              <i class="fa-solid fa-reply" style="font-size:11px;color:var(--pink-400);"></i>
+            </button>
+            {% if is_admin %}
+            <form method="post" style="margin:0;display:inline;">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="pin">
+              <input type="hidden" name="message_id" value="{{ msg.pk }}">
+              <button type="submit" class="btn btn-ghost btn-sm btn-icon" title="Pin message">
+                <i class="fa-solid fa-thumbtack" style="font-size:11px;color:#d97706;"></i>
+              </button>
+            </form>
+            {% endif %}
+            {% if msg.author == request.user or is_admin %}
+            <form method="post" style="margin:0;display:inline;">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="delete">
+              <input type="hidden" name="message_id" value="{{ msg.pk }}">
+              <button type="submit" class="btn btn-ghost btn-sm btn-icon" title="Delete" onclick="return confirm('Delete this message?')">
+                <i class="fa-solid fa-trash btn-delete"></i>
+              </button>
+            </form>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Replies -->
+        {% if msg.replies.all %}
+        <div style="margin-top:6px;margin-left:10px;">
+          {% for reply in msg.replies.all %}
+          <div class="reply-bubble {% if reply.author == request.user %}mine{% endif %}" style="margin-bottom:6px;">
+            <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">
+              <strong style="color:var(--gray-600);">{{ reply.author.get_full_name|default:reply.author.username }}</strong>
+              &middot; {{ reply.created_at|timesince }} ago
+              {% if reply.author == request.user or is_admin %}
+              <form method="post" style="display:inline;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="delete">
+                <input type="hidden" name="message_id" value="{{ reply.pk }}">
+                <button type="submit" class="btn-delete-reply" title="Delete reply" onclick="return confirm('Delete reply?')">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              </form>
+              {% endif %}
+            </div>
+            <div style="font-size:13px;color:var(--gray-700);white-space:pre-wrap;">{{ reply.content }}</div>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Reply Form -->
+        <div class="reply-form-area" id="reply-form-{{ msg.pk }}">
+          <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="reply">
+            <input type="hidden" name="parent_id" value="{{ msg.pk }}">
+            {{ reply_form.content }}
+            <div style="display:flex;gap:8px;margin-top:8px;justify-content:flex-end;">
+              <button type="button" class="btn btn-ghost btn-sm" onclick="toggleReply({{ msg.pk }})">Cancel</button>
+              <button type="submit" class="btn btn-primary btn-sm">
+                <i class="fa-solid fa-reply"></i> Reply
+              </button>
+            </div>
+          </form>
+        </div>
+
+      </div>
+    </div>
+    {% endfor %}
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-state-icon">💬</div>
+    <h3>No messages yet</h3>
+    <p>Be the first to post something in {{ group.name }}!</p>
+  </div>
+  {% endif %}
+</div>
+
+<!-- ── Post New Message (Sticky Bottom Bar) ────────────────── -->
+<div class="chat-input-wrapper">
+  <div style="width:34px;height:34px;background:linear-gradient(135deg,var(--blossom),var(--bloom));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:white;flex-shrink:0;">
+    {{ request.user.first_name|first|default:request.user.username|first|upper }}
+  </div>
+  <form method="post" class="chat-form">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="post">
+    
+    <div style="flex:1; position: relative;">
+      {{ form.content }}
+      {% if form.content.errors %}
+        <div class="form-error" style="position:absolute; bottom: -22px; font-size: 11px;">{{ form.content.errors.0 }}</div>
+      {% endif %}
+    </div>
+
+    <button type="submit" class="btn btn-primary btn-send">
+      <i class="fa-solid fa-paper-plane"></i> <span style="font-size: 13px;">Send</span>
+    </button>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleReply(msgId) {
+  const form = document.getElementById(`reply-form-${msgId}`);
+  const isVisible = form.style.display === 'block';
+  document.querySelectorAll('.reply-form-area').forEach(f => f.style.display = 'none');
+  if (!isVisible) {
+    form.style.display = 'block';
+    form.querySelector('textarea').focus();
+  }
+}
+// Auto-scroll to bottom of message feed on load
+window.addEventListener('load', () => {
+  const lastMsg = document.querySelectorAll('.msg-bubble');
+  if (lastMsg.length) {
+    lastMsg[lastMsg.length - 1].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+});
+</script>
+{% endblock %}

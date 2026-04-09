@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+{% block title %}{{ action }} Group{% endblock %}
+{% block topbar_title %}{{ action }} Group{% endblock %}
+
+{% block content %}
+<div style="max-width:640px;margin:0 auto;">
+
+  <!-- ── Header ───────────────────────────────────────────── -->
+  <div class="page-header" style="margin-bottom:28px;">
+    <div class="page-header-left">
+      <h1 class="page-title">
+        {% if action == 'Create' %}✨ Create a Group{% else %}✏️ Edit Group{% endif %}
+      </h1>
+      <p class="page-subtitle">
+        {% if action == 'Create' %}Start a new collaboration workspace for your team{% else %}Update your group's details{% endif %}
+      </p>
+    </div>
+    <a href="{% url 'group_list' %}" class="btn btn-ghost">
+      <i class="fa-solid fa-arrow-left"></i> Back
+    </a>
+  </div>
+
+  <div class="card">
+    <div class="card-body" style="padding:36px 40px;">
+
+      <!-- Preview strip (live-updates with JS) -->
+      <div id="groupPreview" style="background:linear-gradient(135deg,var(--pink-50),var(--blush));border:1.5px solid var(--petal);border-radius:var(--radius-lg);padding:18px 20px;margin-bottom:28px;display:flex;align-items:center;gap:14px;">
+        <div id="previewAvatar" style="width:52px;height:52px;border-radius:14px;background:#fda4af22;border:2px solid #fda4af;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">🌸</div>
+        <div>
+          <div id="previewName" style="font-family:'Poppins',serif;font-size:17px;font-weight:700;color:var(--gray-800);">
+            {{ form.name.value|default:"Your Group Name" }}
+          </div>
+          <div id="previewDesc" style="font-size:13px;color:var(--text-muted);margin-top:2px;">
+            {{ form.description.value|default:"Group description will appear here..." }}
+          </div>
+        </div>
+      </div>
+
+      <form method="post" id="groupForm">
+        {% csrf_token %}
+
+        <!-- Group Name -->
+        <div class="form-group">
+          <label class="form-label" for="{{ form.name.id_for_label }}">
+            Group Name <span style="color:var(--pink-500);">*</span>
+          </label>
+          {{ form.name }}
+          {% if form.name.errors %}
+          <div class="form-error"><i class="fa-solid fa-circle-exclamation"></i> {{ form.name.errors|join:", " }}</div>
+          {% endif %}
+          <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">Keep it short and recognizable for your team.</div>
+        </div>
+
+        <!-- Description -->
+        <div class="form-group">
+          <label class="form-label" for="{{ form.description.id_for_label }}">Description</label>
+          {{ form.description }}
+          {% if form.description.errors %}
+          <div class="form-error"><i class="fa-solid fa-circle-exclamation"></i> {{ form.description.errors|join:", " }}</div>
+          {% endif %}
+          <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">What's this group about? What are you working on together?</div>
+        </div>
+
+        <!-- Color Theme -->
+        <div class="form-group">
+          <label class="form-label">Group Color Theme</label>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:8px;" id="colorPicker">
+            {% for value, label in form.cover_color.field.widget.choices %}
+            <label class="color-option" style="cursor:pointer;">
+              <input type="radio" name="cover_color" value="{{ value }}"
+                     {% if form.cover_color.value == value or not form.cover_color.value and forloop.first %}checked{% endif %}
+                     style="display:none;" onchange="updatePreviewColor('{{ value }}')">
+              <div class="color-swatch" style="background:{{ value }}22;border:2.5px solid {{ value }};border-radius:10px;padding:10px 6px;text-align:center;transition:all .15s;font-size:12px;font-weight:500;color:var(--gray-700);">
+                <div style="width:28px;height:28px;background:{{ value }};border-radius:50%;margin:0 auto 5px;"></div>
+                {{ label }}
+              </div>
+            </label>
+            {% endfor %}
+          </div>
+          {% if form.cover_color.errors %}
+          <div class="form-error">{{ form.cover_color.errors|join:", " }}</div>
+          {% endif %}
+        </div>
+
+        <!-- Info banner (create only) -->
+        {% if action == 'Create' %}
+        <div style="background:var(--blush);border:1.5px solid var(--petal);border-radius:var(--radius);padding:14px 18px;margin-bottom:24px;display:flex;gap:10px;align-items:flex-start;">
+          <i class="fa-solid fa-circle-info" style="color:var(--pink-500);margin-top:1px;flex-shrink:0;"></i>
+          <div style="font-size:13px;color:var(--gray-700);line-height:1.6;">
+            You'll be set as <strong>Group Admin</strong> automatically. A unique <strong>invite code</strong> will be generated — share it with others so they can join your group.
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Buttons -->
+        <div style="display:flex;gap:12px;justify-content:flex-end;padding-top:4px;">
+          <a href="{% url 'group_list' %}" class="btn btn-ghost">Cancel</a>
+          <button type="submit" class="btn btn-primary">
+            <i class="fa-solid fa-{% if action == 'Create' %}wand-magic-sparkles{% else %}floppy-disk{% endif %}"></i>
+            {{ action }} Group
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.color-option input[type="radio"]:checked + .color-swatch {
+  box-shadow: 0 0 0 3px white, 0 0 0 5px var(--pink-400);
+  transform: scale(1.05);
+}
+.color-swatch:hover { transform: scale(1.03); }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Live preview — name
+const nameInput = document.getElementById('{{ form.name.id_for_label }}');
+const descInput = document.getElementById('{{ form.description.id_for_label }}');
+const previewName = document.getElementById('previewName');
+const previewDesc = document.getElementById('previewDesc');
+const previewAvatar = document.getElementById('previewAvatar');
+
+if (nameInput) {
+  nameInput.addEventListener('input', () => {
+    previewName.textContent = nameInput.value || 'Your Group Name';
+  });
+}
+if (descInput) {
+  descInput.addEventListener('input', () => {
+    previewDesc.textContent = descInput.value || 'Group description will appear here...';
+  });
+}
+
+function updatePreviewColor(color) {
+  previewAvatar.style.background = color + '22';
+  previewAvatar.style.borderColor = color;
+}
+
+// Initialize selected color on load
+document.addEventListener('DOMContentLoaded', () => {
+  const checked = document.querySelector('#colorPicker input[type="radio"]:checked');
+  if (checked) updatePreviewColor(checked.value);
+});
+</script>
+{% endblock %}

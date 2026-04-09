@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% block title %}Assigned to Me{% endblock %}
+{% block topbar_title %}Assigned to Me{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1 class="page-title">👤 Assigned to Me</h1>
+    <p class="page-subtitle">{{ tasks.count }} group task{{ tasks.count|pluralize }} assigned to you</p>
+  </div>
+</div>
+
+<!-- Filter bar -->
+<form method="get" class="filter-bar" style="margin-bottom:20px;">
+  <select name="status" class="form-control" style="max-width:180px;">
+    <option value="">All Statuses</option>
+    {% for val, label in statuses %}
+    <option value="{{ val }}" {% if status_filter == val %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-filter"></i> Filter</button>
+  {% if status_filter %}
+  <a href="{% url 'assigned_tasks' %}" class="btn btn-ghost btn-sm">Clear</a>
+  {% endif %}
+</form>
+
+{% if tasks %}
+  {% regroup tasks by group as tasks_by_group %}
+  {% for group_obj in tasks_by_group %}
+  <!-- Group section header -->
+  <div style="display:flex;align-items:center;gap:10px;margin:24px 0 12px;">
+    <div style="width:32px;height:32px;border-radius:8px;background:{{ group_obj.grouper.cover_color }}25;border:1.5px solid {{ group_obj.grouper.cover_color }};display:flex;align-items:center;justify-content:center;font-size:14px;">🌸</div>
+    <div>
+      <a href="{% url 'group_detail' group_obj.grouper.pk %}" style="font-weight:700;font-size:15px;color:var(--gray-800);text-decoration:none;">
+        {{ group_obj.grouper.name }}
+      </a>
+      <span style="font-size:12px;color:var(--text-muted);margin-left:8px;">{{ group_obj.list|length }} task{{ group_obj.list|length|pluralize }}</span>
+    </div>
+    <a href="{% url 'group_task_list' group_obj.grouper.pk %}" class="btn btn-ghost btn-sm" style="margin-left:auto;">
+      View Group Tasks
+    </a>
+  </div>
+
+  {% for task in group_obj.list %}
+  <div class="task-item {% if task.status == 'completed' %}completed-task{% endif %}" id="atask-{{ task.pk }}">
+    <div style="flex:1;">
+      <div class="task-title">{{ task.title }}</div>
+      {% if task.description %}
+      <div style="font-size:13px;color:var(--text-muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:480px;">{{ task.description }}</div>
+      {% endif %}
+      <div class="task-meta" style="margin-top:6px;">
+        <span class="badge badge-{{ task.priority }}">
+          {% if task.priority == 'high' %}🔴{% elif task.priority == 'medium' %}🟡{% else %}🟢{% endif %}
+          {{ task.get_priority_display }}
+        </span>
+        <span class="badge badge-{{ task.category }}">{{ task.get_category_display }}</span>
+        <span class="badge badge-{{ task.status }}">{{ task.get_status_display }}</span>
+        <span class="task-date {% if task.is_overdue %}overdue{% endif %}">
+          <i class="fa-regular fa-calendar"></i> {{ task.due_date|date:"M j, Y" }}
+          {% if task.is_overdue %} · <strong>Overdue!</strong>{% endif %}
+        </span>
+      </div>
+      <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">
+        Assigned by {{ task.created_by.get_full_name|default:task.created_by.username }}
+      </div>
+    </div>
+    <!-- Quick status update -->
+    <form method="post" action="{% url 'group_task_update_status' group_obj.grouper.pk task.pk %}" id="astatus-{{ task.pk }}">
+      {% csrf_token %}
+      <select name="status" class="form-control" style="font-size:12px;padding:4px 8px;max-width:130px;" onchange="document.getElementById('astatus-{{ task.pk }}').submit()">
+        <option value="pending"   {% if task.status == 'pending' %}selected{% endif %}>⏳ Pending</option>
+        <option value="ongoing"   {% if task.status == 'ongoing' %}selected{% endif %}>🔄 Ongoing</option>
+        <option value="completed" {% if task.status == 'completed' %}selected{% endif %}>✅ Completed</option>
+      </select>
+    </form>
+  </div>
+  {% endfor %}
+  {% endfor %}
+
+{% else %}
+<div class="empty-state">
+  <div class="empty-state-icon">🌸</div>
+  <h3>No assigned tasks</h3>
+  <p>
+    {% if status_filter %}
+    No tasks with that status. <a href="{% url 'assigned_tasks' %}">Clear filter</a>
+    {% else %}
+    You haven't been assigned any group tasks yet. Join a group to get started!
+    {% endif %}
+  </p>
+  {% if not status_filter %}
+  <a href="{% url 'group_list' %}" class="btn btn-primary">Go to My Groups</a>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

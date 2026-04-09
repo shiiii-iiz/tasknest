@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In — TaskNest</title>
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'css/main.css' %}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+
+{% if messages %}
+<div style="position:fixed;top:16px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px;min-width:280px;">
+  {% for message in messages %}
+  <div class="alert alert-{{ message.tags|default:'info' }}" style="margin:0;box-shadow:0 4px 20px rgba(0,0,0,.12);">
+    {{ message }}
+    <button class="alert-close" onclick="this.parentElement.remove()">×</button>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<div class="auth-wrapper">
+  <!-- Left panel -->
+  <div class="auth-left">
+    <div class="auth-brand">
+      <div class="auth-logo-icon">🌸</div>
+      <div class="auth-logo-text">TaskNest</div>
+      <p class="auth-tagline">Your personal and collaborative task management sanctuary.</p>
+    </div>
+
+    <div class="auth-features">
+      <div class="auth-feature-item">
+        <div class="auth-feature-icon">✅</div>
+        <div class="auth-feature-text">
+          <div class="auth-feature-title">Personal Tasks</div>
+          Organize your day with priorities, categories &amp; deadlines.
+        </div>
+      </div>
+      <div class="auth-feature-item">
+        <div class="auth-feature-icon">👥</div>
+        <div class="auth-feature-text">
+          <div class="auth-feature-title">Group Collaboration</div>
+          Create groups, assign tasks, and work together seamlessly.
+        </div>
+      </div>
+      <div class="auth-feature-item">
+        <div class="auth-feature-icon">🔔</div>
+        <div class="auth-feature-text">
+          <div class="auth-feature-title">Smart Reminders</div>
+          Never miss a deadline with automatic due-date notifications.
+        </div>
+      </div>
+      <div class="auth-feature-item">
+        <div class="auth-feature-icon">📅</div>
+        <div class="auth-feature-text">
+          <div class="auth-feature-title">Calendar View</div>
+          See all tasks visualized on a beautiful monthly calendar.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right panel -->
+  <div class="auth-right">
+    <div class="auth-card">
+      <h1 class="auth-card-title" style="font-family:'Playfair Display',serif;">Welcome back 🌸</h1>
+      <p class="auth-card-subtitle">Sign in to your TaskNest account</p>
+
+      {% if form.non_field_errors %}
+      <div class="alert alert-error" style="margin-bottom:18px;">
+        <i class="fa-solid fa-circle-exclamation" style="margin-right:6px;"></i>
+        {{ form.non_field_errors.0 }}
+      </div>
+      {% endif %}
+
+      <form method="post" novalidate>
+        {% csrf_token %}
+
+        <div class="form-group">
+          <label class="form-label">
+            <i class="fa-solid fa-user" style="color:var(--pink-400);margin-right:5px;"></i>
+            Username
+          </label>
+          {{ form.username }}
+          {% if form.username.errors %}
+          <div class="form-error">{{ form.username.errors.0 }}</div>
+          {% endif %}
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">
+            <i class="fa-solid fa-lock" style="color:var(--pink-400);margin-right:5px;"></i>
+            Password
+          </label>
+          <div style="position:relative;">
+            {{ form.password }}
+            <button type="button" onclick="togglePwd('id_password', this)"
+              style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--gray-400);padding:0;">
+              <i class="fa-regular fa-eye" id="eye-id_password"></i>
+            </button>
+          </div>
+          {% if form.password.errors %}
+          <div class="form-error">{{ form.password.errors.0 }}</div>
+          {% endif %}
+        </div>
+
+        <button type="submit" class="btn btn-primary w-full btn-lg" style="margin-top:8px;">
+          <i class="fa-solid fa-right-to-bracket"></i> Sign In
+        </button>
+      </form>
+
+      <div class="auth-footer">
+        Don't have an account? <a href="{% url 'register' %}">Create one for free</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function togglePwd(id, btn) {
+  const input = document.getElementById(id);
+  const icon  = document.getElementById('eye-' + id);
+  if (input.type === 'password') {
+    input.type = 'text';
+    icon.className = 'fa-regular fa-eye-slash';
+  } else {
+    input.type = 'password';
+    icon.className = 'fa-regular fa-eye';
+  }
+}
+// auto-dismiss toasts
+setTimeout(() => {
+  document.querySelectorAll('.alert').forEach(el => {
+    el.style.transition = 'opacity .4s';
+    el.style.opacity = '0';
+    setTimeout(() => el.remove(), 400);
+  });
+}, 4000);
+</script>
+</body>
+</html>

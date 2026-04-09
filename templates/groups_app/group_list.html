@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+{% block title %}My Groups{% endblock %}
+{% block topbar_title %}My Groups{% endblock %}
+
+{% block content %}
+
+<!-- ── Page Header ───────────────────────────────────────── -->
+<div class="page-header">
+  <div class="page-header-left">
+    <h1 class="page-title">My Groups 🌸</h1>
+    <p class="page-subtitle">
+      {% if memberships %}{{ memberships|length }} group{{ memberships|length|pluralize }} — collaborate and get things done together{% else %}No groups yet — create or join one below{% endif %}
+    </p>
+  </div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;">
+    <a href="{% url 'group_join' %}" class="btn btn-outline">
+      <i class="fa-solid fa-right-to-bracket"></i> Join with Code
+    </a>
+    <a href="{% url 'group_create' %}" class="btn btn-primary">
+      <i class="fa-solid fa-plus"></i> Create Group
+    </a>
+  </div>
+</div>
+
+{% if memberships %}
+
+<!-- ── Group Cards Grid ──────────────────────────────────── -->
+<div class="grid-3">
+  {% for membership in memberships %}
+  {% with group=membership.group %}
+  <div class="group-card" onclick="window.location='{% url 'group_detail' group.pk %}'">
+
+    <!-- Color accent bar -->
+    <div style="height:5px;background:linear-gradient(90deg,{{ group.cover_color }},{{ group.cover_color }}88);border-radius:99px;margin-bottom:4px;"></div>
+
+    <!-- Header: avatar + name + role badge -->
+    <div class="group-card-header">
+      <div class="group-avatar" style="background:{{ group.cover_color }}22;border:2px solid {{ group.cover_color }};">
+        <span style="font-size:20px;">🌸</span>
+      </div>
+      <div style="flex:1;min-width:0;">
+        <div class="group-name">{{ group.name }}</div>
+        <div class="group-desc">{{ group.description|default:"No description"|truncatechars:52 }}</div>
+      </div>
+      {% if membership.role == 'admin' %}
+      <span class="badge badge-pink" style="font-size:11px;flex-shrink:0;height:fit-content;">
+        👑 Admin
+      </span>
+      {% else %}
+      <span class="badge" style="font-size:11px;flex-shrink:0;height:fit-content;background:var(--pink-50);color:var(--gray-500);">
+        Member
+      </span>
+      {% endif %}
+    </div>
+
+    <!-- Stats row -->
+    <div class="group-meta">
+      <span>
+        <i class="fa-solid fa-users" style="color:var(--pink-400);"></i>
+        {{ group.member_count }} member{{ group.member_count|pluralize }}
+      </span>
+      <span>
+        <i class="fa-solid fa-list-check" style="color:var(--pink-400);"></i>
+        {{ group.tasks.count }} task{{ group.tasks.count|pluralize }}
+      </span>
+      <span style="margin-left:auto;font-size:11px;color:var(--text-muted);">
+        <i class="fa-regular fa-calendar" style="margin-right:3px;"></i>{{ group.created_at|date:"M Y" }}
+      </span>
+    </div>
+
+    <!-- Progress bar (completed tasks ratio) -->
+    {% with total=group.tasks.count %}
+    {% if total > 0 %}
+    {% with done=group.tasks.filter %}
+    <div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted);margin-bottom:4px;">
+        <span>Tasks progress</span>
+        <span style="color:{{ group.cover_color }};font-weight:600;">{{ group.tasks.count }} total</span>
+      </div>
+      <div style="height:4px;background:var(--border);border-radius:99px;overflow:hidden;">
+        <div style="height:100%;width:40%;background:{{ group.cover_color }};border-radius:99px;transition:width .4s;"></div>
+      </div>
+    </div>
+    {% endwith %}
+    {% endif %}
+    {% endwith %}
+
+    <!-- Invite code box — click to copy, stops propagation so card link doesn't fire -->
+    <div class="invite-code-box" style="padding:10px 16px;margin:0;"
+         onclick="event.stopPropagation();copyGroupCode('{{ group.invite_code }}', this)">
+      <div style="font-size:10px;color:var(--text-muted);margin-bottom:3px;letter-spacing:.5px;">
+        INVITE CODE &nbsp;·&nbsp; <span style="color:var(--pink-400);">click to copy</span>
+      </div>
+      <div class="invite-code" style="font-size:18px;letter-spacing:5px;">{{ group.invite_code }}</div>
+    </div>
+
+    <!-- Bottom action links -->
+    <div style="display:flex;gap:6px;padding-top:2px;" onclick="event.stopPropagation()">
+      <a href="{% url 'group_task_list' group.pk %}" class="btn btn-ghost btn-sm" style="flex:1;justify-content:center;">
+        <i class="fa-solid fa-list-check"></i> Tasks
+      </a>
+      <a href="{% url 'group_members' group.pk %}" class="btn btn-ghost btn-sm" style="flex:1;justify-content:center;">
+        <i class="fa-solid fa-users"></i> Members
+      </a>
+      <a href="{% url 'discussion' group.pk %}" class="btn btn-ghost btn-sm" style="flex:1;justify-content:center;">
+        <i class="fa-solid fa-comments"></i> Chat
+      </a>
+    </div>
+
+  </div>
+  {% endwith %}
+  {% endfor %}
+</div>
+
+{% else %}
+
+<!-- ── Empty State ───────────────────────────────────────── -->
+<div class="card">
+  <div class="empty-state" style="padding:80px 20px;">
+    <div class="empty-state-icon">🌸</div>
+    <h3>No groups yet</h3>
+    <p>Create your own group and invite teammates, or join an existing one using an invite code.</p>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:4px;">
+      <a href="{% url 'group_create' %}" class="btn btn-primary">
+        <i class="fa-solid fa-wand-magic-sparkles"></i> Create a Group
+      </a>
+      <a href="{% url 'group_join' %}" class="btn btn-outline">
+        <i class="fa-solid fa-right-to-bracket"></i> Join with Code
+      </a>
+    </div>
+  </div>
+</div>
+
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function copyGroupCode(code, el) {
+  const codeEl = el.querySelector('.invite-code');
+  const orig   = codeEl.textContent;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(code).then(() => flash(el, codeEl, orig));
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = code;
+    document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
+    flash(el, codeEl, orig);
+  }
+}
+function flash(el, codeEl, orig) {
+  codeEl.textContent = 'Copied! ✓';
+  el.style.background = 'var(--petal)';
+  el.style.borderColor = 'var(--blossom)';
+  setTimeout(() => {
+    codeEl.textContent = orig;
+    el.style.background = '';
+    el.style.borderColor = '';
+  }, 1800);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block title %}Delete Task{% endblock %}
+{% block topbar_title %}Delete Task{% endblock %}
+
+{% block content %}
+<div style="max-width:520px;margin:0 auto;">
+  <div class="card">
+    <div class="card-body" style="text-align:center;padding:48px 40px;">
+      <div style="font-size:52px;margin-bottom:16px;">🗑️</div>
+      <h2 style="margin-bottom:10px;">Delete Task?</h2>
+      <p style="color:var(--text-muted);margin-bottom:8px;">You're about to permanently delete:</p>
+      <div style="background:var(--blush);border:1.5px solid var(--border-md);border-radius:var(--radius);padding:14px 20px;margin:16px 0;">
+        <strong style="color:var(--gray-800);">{{ task.title }}</strong>
+        <div style="margin-top:6px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+          <span class="badge badge-{{ task.priority }}">{{ task.get_priority_display }}</span>
+          <span class="badge badge-{{ task.category }}">{{ task.get_category_display }}</span>
+          <span class="badge badge-{{ task.status }}">{{ task.get_status_display }}</span>
+        </div>
+      </div>
+      <p style="color:var(--text-muted);font-size:13px;margin-bottom:28px;">This action cannot be undone.</p>
+      <form method="post" style="display:flex;gap:12px;justify-content:center;">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">
+          <i class="fa-solid fa-trash"></i> Yes, Delete
+        </button>
+        <a href="{% url 'task_list' %}" class="btn btn-outline">Cancel</a>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

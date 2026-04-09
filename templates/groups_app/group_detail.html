@@ -1,0 +1,282 @@
+{% extends 'base.html' %}
+{% block title %}{{ group.name }}{% endblock %}
+{% block topbar_title %}{{ group.name }}{% endblock %}
+
+{% block content %}
+
+<!-- ── Page Header ───────────────────────────────────────── -->
+<div class="page-header">
+  <div class="page-header-left">
+    <div style="display:flex;align-items:center;gap:16px;">
+      <div style="width:54px;height:54px;border-radius:16px;background:{{ group.cover_color }}22;border:2.5px solid {{ group.cover_color }};display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;">
+        🌸
+      </div>
+      <div>
+        <h1 class="page-title" style="margin-bottom:3px;">{{ group.name }}</h1>
+        <p class="page-subtitle">{{ group.description|default:"No description added yet." }}</p>
+      </div>
+    </div>
+  </div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;">
+    <a href="{% url 'group_task_create' group.pk %}" class="btn btn-primary">
+      <i class="fa-solid fa-plus"></i> Add Task
+    </a>
+    <a href="{% url 'discussion' group.pk %}" class="btn btn-outline">
+      <i class="fa-solid fa-comments"></i> Discussion
+    </a>
+    <a href="{% url 'group_list' %}" class="btn btn-ghost">
+      <i class="fa-solid fa-arrow-left"></i> Back
+    </a>
+  </div>
+</div>
+
+<!-- ── Tab Navigation ────────────────────────────────────── -->
+<div class="tab-nav">
+  <a href="{% url 'group_detail' group.pk %}"   class="tab-btn active">Overview</a>
+  <a href="{% url 'group_task_list' group.pk %}" class="tab-btn">
+    Tasks
+    {% with c=pending_count|add:ongoing_count %}{% if c > 0 %}<span class="nav-badge" style="position:static;margin-left:4px;">{{ c }}</span>{% endif %}{% endwith %}
+  </a>
+  <a href="{% url 'group_members' group.pk %}"  class="tab-btn">Members</a>
+  <a href="{% url 'discussion' group.pk %}"      class="tab-btn">Discussion</a>
+</div>
+
+<!-- ── Stat Cards ────────────────────────────────────────── -->
+<div class="stat-grid" style="margin-bottom:28px;">
+  <div class="stat-card">
+    <div class="stat-icon si-yellow">
+      <i class="fa-solid fa-hourglass-half" style="color:#d97706;"></i>
+    </div>
+    <div class="stat-info">
+      <div class="stat-label">Pending</div>
+      <div class="stat-value">{{ pending_count }}</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon si-blue">
+      <i class="fa-solid fa-rotate" style="color:#2563eb;"></i>
+    </div>
+    <div class="stat-info">
+      <div class="stat-label">Ongoing</div>
+      <div class="stat-value">{{ ongoing_count }}</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon si-green">
+      <i class="fa-solid fa-circle-check" style="color:#059669;"></i>
+    </div>
+    <div class="stat-info">
+      <div class="stat-label">Completed</div>
+      <div class="stat-value">{{ completed_count }}</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon si-pink">
+      <i class="fa-solid fa-users" style="color:var(--pink-500);"></i>
+    </div>
+    <div class="stat-info">
+      <div class="stat-label">Members</div>
+      <div class="stat-value">{{ members.count }}</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Two-column layout ─────────────────────────────────── -->
+<div class="grid-2" style="gap:24px;">
+
+  <!-- Left: Recent Tasks -->
+  <div style="display:flex;flex-direction:column;gap:20px;">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">📋 Active Tasks</span>
+        <a href="{% url 'group_task_list' group.pk %}" class="btn btn-ghost btn-sm">View All</a>
+      </div>
+      <div class="card-body" style="padding:0 0 4px;">
+        {% if recent_tasks %}
+          {% for task in recent_tasks %}
+          <div class="task-item" style="padding:12px 20px;">
+            <div class="task-content" style="flex:1;">
+              <div class="task-title">{{ task.title }}</div>
+              <div class="task-meta" style="margin-top:5px;">
+                <span class="badge badge-{{ task.priority }}">{{ task.get_priority_display }}</span>
+                <span class="badge badge-{{ task.status }}">{{ task.get_status_display }}</span>
+                {% if task.assigned_to %}
+                <span style="display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--text-muted);">
+                  <span style="width:16px;height:16px;background:var(--petal);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:var(--pink-600);">
+                    {{ task.assigned_to.first_name|first|default:task.assigned_to.username|first|upper }}
+                  </span>
+                  {{ task.assigned_to.get_full_name|default:task.assigned_to.username }}
+                  {% if task.assigned_to == request.user %}<strong style="color:var(--pink-500);">(you)</strong>{% endif %}
+                </span>
+                {% else %}
+                <span style="font-size:12px;color:var(--text-muted);"><i class="fa-solid fa-user-slash" style="font-size:10px;"></i> Unassigned</span>
+                {% endif %}
+                <span class="task-date {% if task.is_overdue %}overdue{% endif %}">
+                  <i class="fa-regular fa-calendar"></i> {{ task.due_date|date:"M j" }}
+                  {% if task.is_overdue %}&nbsp;· <strong>Overdue!</strong>{% endif %}
+                </span>
+              </div>
+            </div>
+            <div class="task-actions">
+              <a href="{% url 'group_task_edit' group.pk task.pk %}" class="btn btn-ghost btn-icon btn-sm" title="Edit">
+                <i class="fa-solid fa-pen"></i>
+              </a>
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+        <div class="empty-state" style="padding:32px 20px;">
+          <div class="empty-state-icon" style="font-size:36px;">🌱</div>
+          <p>No active tasks yet.</p>
+          <a href="{% url 'group_task_create' group.pk %}" class="btn btn-primary btn-sm">
+            <i class="fa-solid fa-plus"></i> Create First Task
+          </a>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Recent Discussion Snippets -->
+    {% if recent_messages %}
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">💬 Recent Messages</span>
+        <a href="{% url 'discussion' group.pk %}" class="btn btn-ghost btn-sm">Open Discussion</a>
+      </div>
+      <div class="card-body" style="padding:0 0 4px;">
+        {% for msg in recent_messages %}
+        <div style="display:flex;gap:10px;align-items:flex-start;padding:12px 20px;border-bottom:1px solid var(--border);">
+          <div style="width:32px;height:32px;background:{% if msg.author == request.user %}linear-gradient(135deg,var(--blossom),var(--bloom)){% else %}var(--petal){% endif %};border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:{% if msg.author == request.user %}white{% else %}var(--pink-600){% endif %};flex-shrink:0;">
+            {{ msg.author.first_name|first|default:msg.author.username|first|upper }}
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span style="font-size:13px;font-weight:600;color:var(--gray-700);">{{ msg.author.get_full_name|default:msg.author.username }}</span>
+              <span style="font-size:11px;color:var(--text-muted);">{{ msg.created_at|timesince }} ago</span>
+            </div>
+            <div style="font-size:13px;color:var(--gray-600);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+              {{ msg.content|truncatechars:80 }}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Right: Sidebar cards -->
+  <div style="display:flex;flex-direction:column;gap:20px;">
+
+    <!-- Pinned Messages -->
+    {% if pinned_messages %}
+    <div class="card" style="border:1.5px solid #fde68a;">
+      <div class="card-header" style="background:linear-gradient(135deg,#fffbeb,#fef9c3);border-bottom:1px solid #fde68a;">
+        <span class="card-title" style="color:#92400e;">📌 Pinned Messages</span>
+        <a href="{% url 'discussion' group.pk %}" class="btn btn-ghost btn-sm" style="font-size:12px;">View all</a>
+      </div>
+      <div class="card-body" style="padding:0 0 4px;">
+        {% for msg in pinned_messages %}
+        <div style="padding:12px 20px;border-bottom:1px solid #fef3c7;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
+            <div style="width:28px;height:28px;background:var(--petal);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--pink-600);flex-shrink:0;">
+              {{ msg.author.first_name|first|default:msg.author.username|first|upper }}
+            </div>
+            <span style="font-size:12px;font-weight:600;color:var(--gray-700);">{{ msg.author.get_full_name|default:msg.author.username }}</span>
+            <span style="font-size:11px;color:var(--text-muted);margin-left:auto;">{{ msg.created_at|timesince }} ago</span>
+          </div>
+          <p style="font-size:13px;color:var(--gray-600);line-height:1.5;margin:0;padding-left:36px;">
+            {{ msg.content|truncatechars:120 }}
+          </p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Members Preview -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">👥 Members</span>
+        <a href="{% url 'group_members' group.pk %}" class="btn btn-ghost btn-sm">View All</a>
+      </div>
+      <div class="card-body" style="padding:16px 20px;">
+        <div style="display:flex;flex-wrap:wrap;gap:8px;">
+          {% for m in members %}
+          <div style="display:inline-flex;align-items:center;gap:7px;background:var(--pink-50);border:1px solid var(--petal);border-radius:30px;padding:5px 12px 5px 5px;{% if m.role == 'admin' %}border-color:var(--blossom);background:var(--blush);{% endif %}">
+            <div style="width:26px;height:26px;background:{% if m.role == 'admin' %}linear-gradient(135deg,var(--bloom),var(--pink-600)){% else %}var(--petal){% endif %};border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:{% if m.role == 'admin' %}white{% else %}var(--pink-600){% endif %};">
+              {{ m.user.first_name|first|default:m.user.username|first|upper }}
+            </div>
+            <div>
+              <div style="font-size:12px;font-weight:600;color:var(--gray-800);line-height:1.2;">
+                {{ m.user.get_full_name|default:m.user.username|truncatechars:18 }}
+                {% if m.user == request.user %}<span style="color:var(--pink-400);"> (you)</span>{% endif %}
+              </div>
+              {% if m.role == 'admin' %}<div style="font-size:10px;color:var(--pink-500);font-weight:600;line-height:1.1;">👑 Admin</div>{% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Invite Code -->
+    <div class="card" style="border:1.5px solid var(--petal);">
+      <div class="card-header">
+        <span class="card-title">🔗 Invite People</span>
+      </div>
+      <div class="card-body" style="padding:16px 20px;">
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">
+          Share this code so others can join <strong>{{ group.name }}</strong>.
+        </p>
+        <div class="invite-code-box" onclick="copyGroupCode('{{ group.invite_code }}', this)" style="cursor:pointer;">
+          <div style="font-size:10px;color:var(--text-muted);letter-spacing:.5px;margin-bottom:6px;">
+            INVITE CODE &nbsp;·&nbsp; <span style="color:var(--pink-400);">click to copy</span>
+          </div>
+          <div class="invite-code">{{ group.invite_code }}</div>
+        </div>
+        <p style="font-size:11px;color:var(--text-muted);margin-top:8px;text-align:center;">
+          Anyone with this code can join this group
+        </p>
+      </div>
+    </div>
+
+    <!-- Admin Quick Actions -->
+    {% if is_admin %}
+    <div class="card" style="border:1.5px solid var(--blush);">
+      <div class="card-header">
+        <span class="card-title">⚙️ Admin Actions</span>
+      </div>
+      <div class="card-body" style="padding:16px 20px;display:flex;flex-direction:column;gap:8px;">
+        <a href="{% url 'group_task_create' group.pk %}" class="btn btn-outline w-full">
+          <i class="fa-solid fa-plus"></i> Create Group Task
+        </a>
+        <a href="{% url 'group_members' group.pk %}" class="btn btn-outline w-full">
+          <i class="fa-solid fa-users-gear"></i> Manage Members
+        </a>
+        <a href="{% url 'discussion' group.pk %}" class="btn btn-outline w-full">
+          <i class="fa-solid fa-thumbtack"></i> Pin Messages
+        </a>
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function copyGroupCode(code, el) {
+  const codeEl = el.querySelector('.invite-code');
+  const orig   = codeEl.textContent;
+  const copy   = () => {
+    codeEl.textContent = 'Copied! ✓';
+    el.style.background = 'var(--petal)';
+    el.style.borderColor = 'var(--blossom)';
+    setTimeout(() => { codeEl.textContent = orig; el.style.background = ''; el.style.borderColor = ''; }, 2000);
+  };
+  navigator.clipboard ? navigator.clipboard.writeText(code).then(copy) : copy();
+}
+</script>
+{% endblock %}

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}TaskNest{% endblock %} — TaskNest</title>
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'css/main.css' %}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+<div class="app-wrapper">
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-mark">
+        <div class="logo-icon">🌸</div>
+        <span class="logo-text">TaskNest</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <span class="nav-section-label">Main</span>
+      <a href="{% url 'dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+        <span class="nav-icon"><i class="fa-solid fa-house"></i></span>
+        Dashboard
+      </a>
+      <a href="{% url 'task_list' %}" class="nav-item {% if request.resolver_match.url_name == 'task_list' %}active{% endif %}">
+        <span class="nav-icon"><i class="fa-solid fa-list-check"></i></span>
+        My Tasks
+      </a>
+      <a href="{% url 'calendar' %}" class="nav-item {% if request.resolver_match.url_name == 'calendar' %}active{% endif %}">
+        <span class="nav-icon"><i class="fa-solid fa-calendar"></i></span>
+        Calendar
+      </a>
+      <a href="{% url 'notifications' %}" class="nav-item {% if request.resolver_match.url_name == 'notifications' %}active{% endif %}">
+        <span class="nav-icon"><i class="fa-solid fa-bell"></i></span>
+        Notifications
+        {% if unread_notif_count > 0 %}
+        <span class="nav-badge">{{ unread_notif_count }}</span>
+        {% endif %}
+      </a>
+
+      <span class="nav-section-label">Groups</span>
+      <a href="{% url 'group_list' %}" class="nav-item {% if 'group' in request.resolver_match.url_name and request.resolver_match.url_name != 'assigned_tasks' %}active{% endif %}">
+        <span class="nav-icon"><i class="fa-solid fa-people-group"></i></span>
+        My Groups
+      </a>
+      <a href="{% url 'assigned_tasks' %}" class="nav-item {% if request.resolver_match.url_name == 'assigned_tasks' %}active{% endif %}">
+        <span class="nav-icon"><i class="fa-solid fa-user-check"></i></span>
+        Assigned to Me
+      </a>
+      <a href="{% url 'group_create' %}" class="nav-item {% if request.resolver_match.url_name == 'group_create' %}active{% endif %}">
+        <span class="nav-icon"><i class="fa-solid fa-plus"></i></span>
+        Create Group
+      </a>
+      <a href="{% url 'group_join' %}" class="nav-item {% if request.resolver_match.url_name == 'group_join' %}active{% endif %}">
+        <span class="nav-icon"><i class="fa-solid fa-right-to-bracket"></i></span>
+        Join Group
+      </a>
+
+      <span class="nav-section-label">Account</span>
+      <a href="{% url 'profile' %}" class="nav-item {% if request.resolver_match.url_name == 'profile' %}active{% endif %}">
+        <span class="nav-icon"><i class="fa-solid fa-user"></i></span>
+        Profile
+      </a>
+    </nav>
+
+    <div class="sidebar-user">
+      <div class="user-avatar">
+        {% if request.user.profile %}{{ request.user.profile.get_initials }}{% else %}{{ request.user.username|slice:":2"|upper }}{% endif %}
+      </div>
+      <div class="user-info">
+        <div class="user-name">{{ request.user.get_full_name|default:request.user.username }}</div>
+        <div class="user-role">@{{ request.user.username }}</div>
+      </div>
+      <a href="{% url 'logout' %}" class="sidebar-logout" title="Logout">
+        <i class="fa-solid fa-right-from-bracket"></i>
+      </a>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main-content">
+    <!-- Topbar -->
+    <header class="topbar">
+      <div class="flex items-center gap-3">
+        <button class="btn btn-ghost btn-icon d-lg-none" id="sidebarToggle">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <span class="topbar-title">{% block topbar_title %}TaskNest{% endblock %}</span>
+      </div>
+      <div class="topbar-actions">
+        {% if upcoming_tasks %}
+        <div style="font-size:13px;color:var(--pink-500);display:flex;align-items:center;gap:5px;">
+          <i class="fa-solid fa-clock"></i>
+          {{ upcoming_tasks.count }} upcoming
+        </div>
+        {% endif %}
+        <a href="{% url 'notifications' %}" class="notif-btn">
+          <i class="fa-solid fa-bell"></i>
+          {% if unread_notif_count > 0 %}<span class="notif-dot"></span>{% endif %}
+        </a>
+        <a href="{% url 'task_create' %}" class="btn btn-primary btn-sm">
+          <i class="fa-solid fa-plus"></i> New Task
+        </a>
+      </div>
+    </header>
+
+    <!-- Flash Messages -->
+    {% if messages %}
+    <div class="messages-container" id="messagesContainer">
+      {% for message in messages %}
+      <div class="alert alert-{{ message.tags|default:'info' }}">
+        <span>
+          {% if message.tags == 'success' %}🌸{% elif message.tags == 'error' %}⚠️{% elif message.tags == 'warning' %}💛{% else %}ℹ️{% endif %}
+          {{ message }}
+        </span>
+        <button class="alert-close" onclick="this.parentElement.remove()">×</button>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Page Content -->
+    <div class="page-body">
+      {% block content %}{% endblock %}
+    </div>
+  </div>
+</div>
+
+{% block extra_js %}{% endblock %}
+<script>
+  // Auto-dismiss alerts
+  setTimeout(() => {
+    document.querySelectorAll('.alert').forEach(a => {
+      a.style.animation = 'slideIn .3s ease reverse';
+      setTimeout(() => a.remove(), 300);
+    });
+  }, 4500);
+
+  // Sidebar toggle (mobile)
+  const sidebarToggle = document.getElementById('sidebarToggle');
+  const sidebar = document.getElementById('sidebar');
+  if (sidebarToggle) {
+    sidebarToggle.addEventListener('click', () => sidebar.classList.toggle('open'));
+  }
+  document.addEventListener('click', (e) => {
+    if (sidebar && sidebar.classList.contains('open') && !sidebar.contains(e.target) && e.target !== sidebarToggle) {
+      sidebar.classList.remove('open');
+    }
+  });
+</script>
+</body>
+</html>

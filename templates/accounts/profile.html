@@ -1,0 +1,185 @@
+{% extends 'base.html' %}
+{% block title %}My Profile{% endblock %}
+{% block topbar_title %}My Profile{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1 class="page-title">My Profile 👤</h1>
+    <p class="page-subtitle">Your account overview and statistics</p>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:320px 1fr;gap:24px;align-items:start;">
+
+  <!-- Left — Avatar card -->
+  <div>
+    <div class="card" style="text-align:center;">
+      <div class="card-body" style="padding:36px 28px;">
+        <!-- Avatar -->
+        <div style="width:88px;height:88px;border-radius:50%;
+          background:linear-gradient(135deg,var(--blossom),var(--bloom));
+          display:flex;align-items:center;justify-content:center;
+          font-size:32px;font-weight:700;color:white;
+          margin:0 auto 18px;
+          box-shadow:0 6px 24px rgba(236,72,153,.35);">
+          {{ request.user.first_name|first|upper }}{{ request.user.last_name|first|upper }}
+        </div>
+
+        <h2 style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--gray-800);margin-bottom:4px;">
+          {{ request.user.get_full_name|default:request.user.username }}
+        </h2>
+        <p style="font-size:13px;color:var(--pink-500);font-weight:500;margin-bottom:4px;">@{{ request.user.username }}</p>
+        <p style="font-size:13px;color:var(--text-muted);">{{ request.user.email }}</p>
+
+        <div class="divider"></div>
+
+        <!-- Stats row -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+          <div style="text-align:center;padding:10px 4px;background:var(--pink-50);border-radius:10px;">
+            <div style="font-size:22px;font-weight:700;color:var(--pink-500);">{{ request.user.tasks.count }}</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Tasks</div>
+          </div>
+          <div style="text-align:center;padding:10px 4px;background:var(--pink-50);border-radius:10px;">
+            <div style="font-size:22px;font-weight:700;color:var(--pink-500);">{{ request.user.group_memberships.count }}</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Groups</div>
+          </div>
+          <div style="text-align:center;padding:10px 4px;background:var(--pink-50);border-radius:10px;">
+            <div style="font-size:22px;font-weight:700;color:var(--pink-500);">{{ request.user.assigned_group_tasks.count }}</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Assigned</div>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+        <p style="font-size:12px;color:var(--text-muted);">
+          <i class="fa-regular fa-calendar" style="margin-right:4px;"></i>
+          Member since {{ request.user.date_joined|date:"F j, Y" }}
+        </p>
+      </div>
+    </div>
+
+    <!-- Quick links -->
+    <div class="card" style="margin-top:16px;">
+      <div class="card-header"><span class="card-title">⚡ Quick Links</span></div>
+      <div class="card-body" style="padding:12px 16px;display:flex;flex-direction:column;gap:6px;">
+        <a href="{% url 'task_create' %}" class="btn btn-outline w-full" style="justify-content:flex-start;">
+          <i class="fa-solid fa-plus"></i> New Task
+        </a>
+        <a href="{% url 'group_create' %}" class="btn btn-outline w-full" style="justify-content:flex-start;">
+          <i class="fa-solid fa-people-group"></i> Create Group
+        </a>
+        <a href="{% url 'assigned_tasks' %}" class="btn btn-outline w-full" style="justify-content:flex-start;">
+          <i class="fa-solid fa-user-check"></i> My Assigned Tasks
+        </a>
+        <a href="{% url 'logout' %}" class="btn w-full" style="justify-content:flex-start;background:var(--rose-100);color:#be185d;border:1.5px solid var(--rose-200);">
+          <i class="fa-solid fa-right-from-bracket"></i> Logout
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right — Details & activity -->
+  <div style="display:flex;flex-direction:column;gap:20px;">
+
+    <!-- Account Info -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">🪪 Account Information</span>
+      </div>
+      <div class="card-body" style="padding:20px 24px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          {% for label, value in profile_fields %}
+          <div style="padding:14px 16px;background:var(--gray-50);border-radius:10px;border:1px solid var(--border);">
+            <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">{{ label }}</div>
+            <div style="font-size:14px;font-weight:500;color:var(--gray-800);">{{ value|default:"—" }}</div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Task breakdown -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">📊 Task Breakdown</span>
+        <a href="{% url 'task_list' %}" class="btn btn-ghost btn-sm">View All</a>
+      </div>
+      <div class="card-body" style="padding:20px 24px;">
+        {% with total=request.user.tasks.count %}
+        {% with done=request.user.tasks.filter %}
+
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;">
+          <div style="text-align:center;padding:14px 8px;border-radius:12px;background:#fef3c7;border:1px solid #fde68a;">
+            <div style="font-size:20px;font-weight:700;color:#b45309;">{{ task_pending }}</div>
+            <div style="font-size:11px;color:#92400e;margin-top:2px;font-weight:500;">Pending</div>
+          </div>
+          <div style="text-align:center;padding:14px 8px;border-radius:12px;background:#dbeafe;border:1px solid #93c5fd;">
+            <div style="font-size:20px;font-weight:700;color:#1d4ed8;">{{ task_ongoing }}</div>
+            <div style="font-size:11px;color:#1e40af;margin-top:2px;font-weight:500;">Ongoing</div>
+          </div>
+          <div style="text-align:center;padding:14px 8px;border-radius:12px;background:#d1fae5;border:1px solid #6ee7b7;">
+            <div style="font-size:20px;font-weight:700;color:#059669;">{{ task_completed }}</div>
+            <div style="font-size:11px;color:#065f46;margin-top:2px;font-weight:500;">Completed</div>
+          </div>
+          <div style="text-align:center;padding:14px 8px;border-radius:12px;background:#fee2e2;border:1px solid #fca5a5;">
+            <div style="font-size:20px;font-weight:700;color:#ef4444;">{{ task_overdue }}</div>
+            <div style="font-size:11px;color:#991b1b;margin-top:2px;font-weight:500;">Overdue</div>
+          </div>
+        </div>
+
+        {% if total > 0 %}
+        <div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+            <span style="font-size:13px;color:var(--gray-600);">Completion rate</span>
+            <span style="font-size:13px;font-weight:700;color:var(--pink-500);">
+              {% if total %}{% widthratio task_completed total 100 %}%{% else %}0%{% endif %}
+            </span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width:{% if total %}{% widthratio task_completed total 100 %}{% else %}0{% endif %}%;"></div>
+          </div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">{{ task_completed }} of {{ total }} tasks completed</div>
+        </div>
+        {% endif %}
+
+        {% endwith %}
+        {% endwith %}
+      </div>
+    </div>
+
+    <!-- Groups I'm in -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">👥 My Groups</span>
+        <a href="{% url 'group_list' %}" class="btn btn-ghost btn-sm">View All</a>
+      </div>
+      <div class="card-body" style="padding:16px;">
+        {% if memberships %}
+          {% for m in memberships %}
+          <a href="{% url 'group_detail' m.group.pk %}" style="text-decoration:none;">
+            <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;margin-bottom:6px;border:1px solid var(--border);transition:background .15s;"
+                 onmouseover="this.style.background='var(--pink-50)'" onmouseout="this.style.background=''">
+              <div style="width:36px;height:36px;border-radius:10px;background:{{ m.group.cover_color }}30;border:1.5px solid {{ m.group.cover_color }};display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">🌸</div>
+              <div style="flex:1;min-width:0;">
+                <div style="font-weight:600;font-size:14px;color:var(--gray-800);">{{ m.group.name }}</div>
+                <div style="font-size:12px;color:var(--text-muted);">{{ m.group.member_count }} member{{ m.group.member_count|pluralize }}</div>
+              </div>
+              {% if m.role == 'admin' %}
+              <span class="badge badge-pink" style="font-size:11px;">👑 Admin</span>
+              {% endif %}
+            </div>
+          </a>
+          {% endfor %}
+        {% else %}
+          <div class="empty-state" style="padding:30px 10px;">
+            <div class="empty-state-icon">🌸</div>
+            <p>You haven't joined any groups yet.</p>
+            <a href="{% url 'group_create' %}" class="btn btn-primary btn-sm">Create a Group</a>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

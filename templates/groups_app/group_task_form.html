@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% block title %}{{ action }} Group Task{% endblock %}
+{% block topbar_title %}{{ action }} Group Task{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1 class="page-title">{{ action }} Group Task</h1>
+    <p class="page-subtitle">
+      {% if action == 'Create' %}Add a new task to {{ group.name }}{% else %}Edit task in {{ group.name }}{% endif %}
+    </p>
+  </div>
+  <a href="{% url 'group_task_list' group.pk %}" class="btn btn-ghost">
+    <i class="fa-solid fa-arrow-left"></i> Back
+  </a>
+</div>
+
+<!-- Tab nav -->
+<div class="tab-nav" style="margin-bottom:24px;">
+  <a href="{% url 'group_detail' group.pk %}" class="tab-btn">Overview</a>
+  <a href="{% url 'group_task_list' group.pk %}" class="tab-btn active">Tasks</a>
+  <a href="{% url 'group_members' group.pk %}" class="tab-btn">Members</a>
+  <a href="{% url 'discussion' group.pk %}" class="tab-btn">Discussion</a>
+</div>
+
+<div style="max-width:680px;">
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">
+        {% if action == 'Create' %}✨ New Task{% else %}✏️ Edit Task{% endif %}
+      </span>
+      <span style="font-size:13px;color:var(--pink-400);">
+        <i class="fa-solid fa-people-group"></i> {{ group.name }}
+      </span>
+    </div>
+    <div class="card-body" style="padding:28px;">
+      <form method="post">
+        {% csrf_token %}
+
+        <!-- Title -->
+        <div class="form-group">
+          <label class="form-label">Task Title <span style="color:var(--danger);">*</span></label>
+          {{ form.title }}
+          {% if form.title.errors %}<div class="form-error">{{ form.title.errors.0 }}</div>{% endif %}
+        </div>
+
+        <!-- Description -->
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          {{ form.description }}
+          {% if form.description.errors %}<div class="form-error">{{ form.description.errors.0 }}</div>{% endif %}
+        </div>
+
+        <!-- Due date + Priority row -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div class="form-group">
+            <label class="form-label">Due Date <span style="color:var(--danger);">*</span></label>
+            {{ form.due_date }}
+            {% if form.due_date.errors %}<div class="form-error">{{ form.due_date.errors.0 }}</div>{% endif %}
+          </div>
+          <div class="form-group">
+            <label class="form-label">Priority</label>
+            {{ form.priority }}
+            {% if form.priority.errors %}<div class="form-error">{{ form.priority.errors.0 }}</div>{% endif %}
+          </div>
+        </div>
+
+        <!-- Category + Status row -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div class="form-group">
+            <label class="form-label">Category</label>
+            {{ form.category }}
+            {% if form.category.errors %}<div class="form-error">{{ form.category.errors.0 }}</div>{% endif %}
+          </div>
+          <div class="form-group">
+            <label class="form-label">Status</label>
+            {{ form.status }}
+            {% if form.status.errors %}<div class="form-error">{{ form.status.errors.0 }}</div>{% endif %}
+          </div>
+        </div>
+
+        <!-- Assigned to -->
+        <div class="form-group">
+          <label class="form-label">
+            <i class="fa-solid fa-user-check" style="color:var(--pink-400);"></i> Assign To
+          </label>
+          {{ form.assigned_to }}
+          <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">
+            The assigned member will receive a notification.
+          </div>
+          {% if form.assigned_to.errors %}<div class="form-error">{{ form.assigned_to.errors.0 }}</div>{% endif %}
+        </div>
+
+        <!-- Non-field errors -->
+        {% if form.non_field_errors %}
+        <div class="form-error" style="margin-bottom:16px;">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <!-- Submit row -->
+        <div style="display:flex;gap:12px;justify-content:flex-end;padding-top:8px;border-top:1px solid var(--border);margin-top:8px;">
+          <a href="{% url 'group_task_list' group.pk %}" class="btn btn-ghost">Cancel</a>
+          <button type="submit" class="btn btn-primary">
+            <i class="fa-solid fa-{% if action == 'Create' %}plus{% else %}check{% endif %}"></i>
+            {{ action }} Task
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

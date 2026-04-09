@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block title %}Delete Task{% endblock %}
+{% block topbar_title %}Delete Task{% endblock %}
+
+{% block content %}
+<div style="max-width:520px;margin:0 auto;padding-top:20px;">
+  <div class="card" style="border:2px solid #fecdd3;border-top:4px solid var(--danger);">
+    <div class="card-body" style="padding:36px;text-align:center;">
+      <div style="width:72px;height:72px;background:#fef2f2;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:28px;">
+        🗑️
+      </div>
+      <h2 style="font-family:'Playfair Display',serif;font-size:22px;color:var(--gray-800);margin-bottom:10px;">Delete Group Task?</h2>
+      <p style="color:var(--text-light);font-size:15px;margin-bottom:6px;">You are about to permanently delete:</p>
+      <div style="background:var(--pink-50);border:1px solid var(--petal);border-radius:12px;padding:14px 20px;margin:16px 0;">
+        <div style="font-weight:700;font-size:16px;color:var(--gray-800);">{{ task.title }}</div>
+        <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">
+          From group <strong>{{ group.name }}</strong> &middot; Due {{ task.due_date|date:"M j, Y" }}
+        </div>
+      </div>
+      {% if task.assigned_to %}
+      <div style="font-size:13px;color:var(--text-muted);margin-bottom:20px;">
+        This task is assigned to <strong>{{ task.assigned_to.get_full_name|default:task.assigned_to.username }}</strong>.
+      </div>
+      {% endif %}
+      <p style="color:var(--text-muted);font-size:13px;margin-bottom:28px;">This action cannot be undone.</p>
+      <div style="display:flex;gap:12px;justify-content:center;">
+        <a href="{% url 'group_task_list' group.pk %}" class="btn btn-ghost" style="min-width:120px;">
+          <i class="fa-solid fa-arrow-left"></i> Cancel
+        </a>
+        <form method="post" style="display:inline;">
+          {% csrf_token %}
+          <button type="submit" class="btn" style="background:var(--danger);color:white;min-width:120px;border:none;">
+            <i class="fa-solid fa-trash"></i> Yes, Delete
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

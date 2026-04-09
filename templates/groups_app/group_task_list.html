@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+{% block title %}{{ group.name }} — Tasks{% endblock %}
+{% block topbar_title %}{{ group.name }} — Tasks{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1 class="page-title">📋 Group Tasks</h1>
+    <p class="page-subtitle">{{ tasks.count }} task{{ tasks.count|pluralize }} in {{ group.name }}</p>
+  </div>
+  <a href="{% url 'group_task_create' group.pk %}" class="btn btn-primary">
+    <i class="fa-solid fa-plus"></i> Add Task
+  </a>
+</div>
+
+<!-- Tab nav -->
+<div class="tab-nav" style="margin-bottom:24px;">
+  <a href="{% url 'group_detail' group.pk %}" class="tab-btn">Overview</a>
+  <a href="{% url 'group_task_list' group.pk %}" class="tab-btn active">Tasks</a>
+  <a href="{% url 'group_members' group.pk %}" class="tab-btn">Members</a>
+  <a href="{% url 'discussion' group.pk %}" class="tab-btn">Discussion</a>
+</div>
+
+<!-- Filters -->
+<form method="get" class="filter-bar" style="margin-bottom:20px;">
+  <select name="status" class="form-control" style="max-width:180px;">
+    <option value="">All Statuses</option>
+    {% for val, label in statuses %}
+    <option value="{{ val }}" {% if status_filter == val %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+  <select name="priority" class="form-control" style="max-width:180px;">
+    <option value="">All Priorities</option>
+    {% for val, label in priorities %}
+    <option value="{{ val }}" {% if priority_filter == val %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-filter"></i> Filter</button>
+  {% if status_filter or priority_filter %}
+  <a href="{% url 'group_task_list' group.pk %}" class="btn btn-ghost btn-sm">Clear</a>
+  {% endif %}
+</form>
+
+<!-- Task List -->
+{% if tasks %}
+  {% for task in tasks %}
+  <div class="task-item {% if task.status == 'completed' %}completed-task{% endif %}" id="gtask-{{ task.pk }}">
+    <div style="flex:1;">
+      <div style="display:flex;align-items:flex-start;gap:12px;">
+        <div style="flex:1;">
+          <div class="task-title">{{ task.title }}</div>
+          {% if task.description %}
+          <div style="font-size:13px;color:var(--text-muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:480px;">{{ task.description }}</div>
+          {% endif %}
+          <div class="task-meta" style="margin-top:6px;">
+            <span class="badge badge-{{ task.priority }}">
+              {% if task.priority == 'high' %}🔴{% elif task.priority == 'medium' %}🟡{% else %}🟢{% endif %}
+              {{ task.get_priority_display }}
+            </span>
+            <span class="badge badge-{{ task.category }}">{{ task.get_category_display }}</span>
+            <span class="badge badge-{{ task.status }}">{{ task.get_status_display }}</span>
+            <span class="task-date {% if task.is_overdue %}overdue{% endif %}">
+              <i class="fa-regular fa-calendar"></i> {{ task.due_date|date:"M j, Y" }}
+              {% if task.is_overdue %} · <strong>Overdue!</strong>{% endif %}
+            </span>
+          </div>
+          <div style="margin-top:6px;display:flex;align-items:center;gap:8px;">
+            {% if task.assigned_to %}
+            <div style="display:flex;align-items:center;gap:5px;">
+              <div style="width:20px;height:20px;background:var(--petal);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:var(--pink-600);">
+                {{ task.assigned_to.first_name|first|default:task.assigned_to.username|first|upper }}
+              </div>
+              <span style="font-size:12px;color:var(--text-muted);">{{ task.assigned_to.get_full_name|default:task.assigned_to.username }}</span>
+              {% if task.assigned_to == request.user %}<span style="font-size:11px;color:var(--pink-500);font-weight:600;">(You)</span>{% endif %}
+            </div>
+            {% else %}
+            <span style="font-size:12px;color:var(--text-muted);"><i class="fa-solid fa-user-slash" style="font-size:11px;"></i> Unassigned</span>
+            {% endif %}
+            <span style="font-size:12px;color:var(--text-muted);">by {{ task.created_by.get_full_name|default:task.created_by.username }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick status change -->
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+      <form method="post" action="{% url 'group_task_update_status' group.pk task.pk %}" id="status-form-{{ task.pk }}">
+        {% csrf_token %}
+        <select name="status" class="form-control" style="font-size:12px;padding:4px 8px;max-width:130px;" onchange="submitStatusForm({{ task.pk }})">
+          <option value="pending" {% if task.status == 'pending' %}selected{% endif %}>⏳ Pending</option>
+          <option value="ongoing" {% if task.status == 'ongoing' %}selected{% endif %}>🔄 Ongoing</option>
+          <option value="completed" {% if task.status == 'completed' %}selected{% endif %}>✅ Completed</option>
+        </select>
+      </form>
+      <div class="task-actions">
+        <a href="{% url 'group_task_edit' group.pk task.pk %}" class="btn btn-ghost btn-icon btn-sm" title="Edit">
+          <i class="fa-solid fa-pen"></i>
+        </a>
+        <a href="{% url 'group_task_delete' group.pk task.pk %}" class="btn btn-ghost btn-icon btn-sm" title="Delete" style="color:var(--danger);">
+          <i class="fa-solid fa-trash"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+{% else %}
+<div class="empty-state">
+  <div class="empty-state-icon">📋</div>
+  <h3>No tasks found</h3>
+  <p>{% if status_filter or priority_filter %}Try adjusting your filters.{% else %}This group has no tasks yet.{% endif %}</p>
+  {% if not status_filter and not priority_filter %}
+  <a href="{% url 'group_task_create' group.pk %}" class="btn btn-primary">Create First Task</a>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function submitStatusForm(pk) {
+  document.getElementById(`status-form-${pk}`).submit();
+}
+</script>
+{% endblock %}

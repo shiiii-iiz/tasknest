@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Account — TaskNest</title>
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'css/main.css' %}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    .strength-bar { height:4px; border-radius:99px; background:var(--gray-200); overflow:hidden; margin-top:6px; }
+    .strength-fill { height:100%; border-radius:99px; width:0; transition:width .3s,background .3s; }
+    .req-list { margin:8px 0 0; padding:0; list-style:none; display:flex; flex-wrap:wrap; gap:6px; }
+    .req-item { font-size:11px; padding:2px 8px; border-radius:20px; background:var(--gray-100); color:var(--gray-500); transition:.2s; }
+    .req-item.met { background:#d1fae5; color:#059669; }
+  </style>
+</head>
+<body>
+
+{% if messages %}
+<div style="position:fixed;top:16px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px;min-width:280px;">
+  {% for message in messages %}
+  <div class="alert alert-{{ message.tags|default:'info' }}" style="margin:0;box-shadow:0 4px 20px rgba(0,0,0,.12);">
+    {{ message }}
+    <button class="alert-close" onclick="this.parentElement.remove()">×</button>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<div class="auth-wrapper">
+  <!-- Left panel -->
+  <div class="auth-left">
+    <div class="auth-brand">
+      <div class="auth-logo-icon">🌸</div>
+      <div class="auth-logo-text">TaskNest</div>
+      <p class="auth-tagline">Join and start organizing your life beautifully.</p>
+    </div>
+    <div class="auth-features">
+      <div class="auth-feature-item">
+        <div class="auth-feature-icon">🆓</div>
+        <div class="auth-feature-text">
+          <div class="auth-feature-title">Free to Use</div>
+          Create your account in seconds. No credit card needed.
+        </div>
+      </div>
+      <div class="auth-feature-item">
+        <div class="auth-feature-icon">🔒</div>
+        <div class="auth-feature-text">
+          <div class="auth-feature-title">Private &amp; Secure</div>
+          Your tasks are private to you and the groups you choose.
+        </div>
+      </div>
+      <div class="auth-feature-item">
+        <div class="auth-feature-icon">💬</div>
+        <div class="auth-feature-text">
+          <div class="auth-feature-title">Team Discussion</div>
+          Post messages, reply, and pin announcements in groups.
+        </div>
+      </div>
+      <div class="auth-feature-item">
+        <div class="auth-feature-icon">🌸</div>
+        <div class="auth-feature-text">
+          <div class="auth-feature-title">Beautiful Design</div>
+          A delightful pink pastel workspace you'll love using every day.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right panel -->
+  <div class="auth-right">
+    <div class="auth-card">
+      <h1 class="auth-card-title" style="font-family:'Playfair Display',serif;">Create account 🌷</h1>
+      <p class="auth-card-subtitle">Set up your free TaskNest account today</p>
+
+      {% if form.non_field_errors %}
+      <div class="alert alert-error" style="margin-bottom:18px;">
+        <i class="fa-solid fa-circle-exclamation" style="margin-right:6px;"></i>
+        {{ form.non_field_errors.0 }}
+      </div>
+      {% endif %}
+
+      <form method="post" novalidate>
+        {% csrf_token %}
+
+        <!-- Name row -->
+        <div class="grid-2" style="gap:12px;">
+          <div class="form-group" style="margin-bottom:0;">
+            <label class="form-label">First Name <span style="color:var(--danger);">*</span></label>
+            {{ form.first_name }}
+            {% if form.first_name.errors %}
+            <div class="form-error">{{ form.first_name.errors.0 }}</div>
+            {% endif %}
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label class="form-label">Last Name <span style="color:var(--danger);">*</span></label>
+            {{ form.last_name }}
+            {% if form.last_name.errors %}
+            <div class="form-error">{{ form.last_name.errors.0 }}</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-top:14px;">
+          <label class="form-label">
+            <i class="fa-solid fa-at" style="color:var(--pink-400);margin-right:5px;"></i>
+            Username <span style="color:var(--danger);">*</span>
+          </label>
+          {{ form.username }}
+          {% if form.username.errors %}
+          <div class="form-error">{{ form.username.errors.0 }}</div>
+          {% endif %}
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">
+            <i class="fa-solid fa-envelope" style="color:var(--pink-400);margin-right:5px;"></i>
+            Email Address <span style="color:var(--danger);">*</span>
+          </label>
+          {{ form.email }}
+          {% if form.email.errors %}
+          <div class="form-error">{{ form.email.errors.0 }}</div>
+          {% endif %}
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">
+            <i class="fa-solid fa-lock" style="color:var(--pink-400);margin-right:5px;"></i>
+            Password <span style="color:var(--danger);">*</span>
+          </label>
+          <div style="position:relative;">
+            {{ form.password1 }}
+            <button type="button" onclick="togglePwd('id_password1', this)"
+              style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--gray-400);padding:0;">
+              <i class="fa-regular fa-eye" id="eye-id_password1"></i>
+            </button>
+          </div>
+          <!-- Strength indicator -->
+          <div class="strength-bar"><div class="strength-fill" id="strengthFill"></div></div>
+          <ul class="req-list">
+            <li class="req-item" id="req-len">8+ chars</li>
+            <li class="req-item" id="req-num">Number</li>
+            <li class="req-item" id="req-upper">Uppercase</li>
+            <li class="req-item" id="req-special">Symbol</li>
+          </ul>
+          {% if form.password1.errors %}
+          <div class="form-error">{{ form.password1.errors.0 }}</div>
+          {% endif %}
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">
+            <i class="fa-solid fa-lock" style="color:var(--pink-400);margin-right:5px;"></i>
+            Confirm Password <span style="color:var(--danger);">*</span>
+          </label>
+          <div style="position:relative;">
+            {{ form.password2 }}
+            <button type="button" onclick="togglePwd('id_password2', this)"
+              style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--gray-400);padding:0;">
+              <i class="fa-regular fa-eye" id="eye-id_password2"></i>
+            </button>
+          </div>
+          {% if form.password2.errors %}
+          <div class="form-error">{{ form.password2.errors.0 }}</div>
+          {% endif %}
+        </div>
+
+        <button type="submit" class="btn btn-primary w-full btn-lg">
+          <i class="fa-solid fa-user-plus"></i> Create My Account
+        </button>
+      </form>
+
+      <div class="auth-footer">
+        Already have an account? <a href="{% url 'login' %}">Sign in instead</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function togglePwd(id, btn) {
+  const input = document.getElementById(id);
+  const icon  = document.getElementById('eye-' + id);
+  if (!input || !icon) return;
+  if (input.type === 'password') {
+    input.type = 'text';
+    icon.className = 'fa-regular fa-eye-slash';
+  } else {
+    input.type = 'password';
+    icon.className = 'fa-regular fa-eye';
+  }
+}
+
+// Password strength meter
+const pwdInput = document.getElementById('id_password1');
+if (pwdInput) {
+  pwdInput.addEventListener('input', function() {
+    const v = this.value;
+    const checks = {
+      'req-len':     v.length >= 8,
+      'req-num':     /\d/.test(v),
+      'req-upper':   /[A-Z]/.test(v),
+      'req-special': /[^a-zA-Z0-9]/.test(v),
+    };
+    let score = Object.values(checks).filter(Boolean).length;
+    const fill  = document.getElementById('strengthFill');
+    const colors = ['', '#ef4444', '#f59e0b', '#10b981', '#059669'];
+    fill.style.width   = (score * 25) + '%';
+    fill.style.background = colors[score] || colors[1];
+    Object.entries(checks).forEach(([id, met]) => {
+      document.getElementById(id)?.classList.toggle('met', met);
+    });
+  });
+}
+
+// auto-dismiss toasts
+setTimeout(() => {
+  document.querySelectorAll('.alert').forEach(el => {
+    el.style.transition = 'opacity .4s';
+    el.style.opacity = '0';
+    setTimeout(() => el.remove(), 400);
+  });
+}, 4000);
+</script>
+</body>
+</html>
